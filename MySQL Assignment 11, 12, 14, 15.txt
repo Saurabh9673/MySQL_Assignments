@@ -1,0 +1,84 @@
+--------Day 11-----------------
+------Q.1---------------
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Getcustomerlevel`(in customernumber integer, out customerlevel varchar(10))
+BEGIN
+declare credit decimal(10,2);
+
+select creditlimit into credit from customers where customernumber = customernumber limit 1;
+
+if credit > 100000 then 
+  set customerlevel = 'platinum';
+elseif credit >= 25000 and credit <= 100000 then
+  set customerlevel = 'gold';
+else 
+  set customerlevel = 'silver';
+end if;
+
+END
+
+--------Q. 2-----------------
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Get_country_payments`(in inputyear integer, in inputcountry varchar(111))
+BEGIN
+
+select year(p.paymentdate) as year, c.country as country,
+concat(format(sum(p.amount)/1000,0),'K') as total_amount from 
+payments p join customers c on p.customernumber = c.customernumber
+where year (p.paymentdate) = inputyear and c.country = inputcountry 
+group by year, country;
+
+END
+
+----------------------Day 12--------------
+---------Q. 2----------------
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `Calculate_age`(Date_of_birth DATE) RETURNS varchar(111) CHARSET latin1
+    DETERMINISTIC
+BEGIN
+
+declare years integer;
+declare months integer;
+declare age varchar(111);
+
+set years = timestampdiff(year, Date_of_birth, curdate());
+set months = timestampdiff(month, Date_of_birth, curdate()) % 12;
+
+if years = 0 then 
+   set age = concat(months, ' months');
+elseif months = 0 then 
+   set age = concat(years, ' years');
+else
+   set age = concat(years, ' year ', months, ' months');
+end if;
+
+RETURN age;
+END
+
+---------------------Day 14---------------------
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `insertemp_eh`(in p_empid integer, in p_empname varchar(111), in p_emailaddress varchar(111))
+BEGIN
+
+declare exit handler for sqlexception begin rollback;
+signal sqlstate '45000' set message_text = 'Error occurred';
+end;
+
+start transaction;
+insert into emp_EH (empID, empname, emailaddress) values (p_empid, p_empname, p_emailaddress);
+commit;
+END
+
+-------------------Day 15-----------------------
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `EnsurePositiveWorkingHours` BEFORE INSERT ON `emp_bit` FOR EACH ROW BEGIN
+
+if new.working_hours < 0 then set 
+new.working_hours = -new.working_hours;
+end if;
+
+END
+
+
+--------------------------------------END-----------------------------------
